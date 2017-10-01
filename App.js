@@ -85,7 +85,7 @@ export default class App extends React.Component {
             source={{
               uri: this.state.imageUri
             }}
-            style={{ width: 300, height: 300 }}
+            style={{ width: 400, height: 400 }}
           />
           <Text
             style={[styles.text, {top:5}]}>
@@ -108,6 +108,12 @@ export default class App extends React.Component {
           style={styles.button}
           onPress={this._onPick}>
           <Text>hello, world</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={this._onTake}>
+          <Text>take a pic!</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -148,9 +154,21 @@ export default class App extends React.Component {
   }
 
   _onSave = async () => {
-    const {uri} = await Expo.takeSnapshotAsync(this.memeView);
+    const uri = await Expo.takeSnapshotAsync(this.memeView);
     console.log('uri2: ', uri);
     // await CameraRoll.saveToCameraRoll(uri);
+    // await CameraRoll.saveToCameraRoll('/private/var/mobile/Containers/Data/Application/421EC44E-4C8C-4248-8B37-0059B581B734/tmp/ReactABI21_0_0Native/CDF0AA2B-0674-432D-BB98-8CD0C1F449FA.png');
+  }
+
+  _onTake = async () => {
+    const {
+      cancelled,
+      uri,
+    } = await Expo.ImagePicker.launchCameraAsync();
+    if (!cancelled) {
+      this.setState({ imageUri: uri });
+    }
+    console.log('uri: ', uri);
   }
 }
 
@@ -170,7 +188,7 @@ const styles = StyleSheet.create({
     right:50,
     color: 'white',
     backgroundColor: 'transparent',
-    fontSize: 20,
+    fontSize: 50,
     fontWeight: '900',
     textAlign: 'center'
   },
