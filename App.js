@@ -1,6 +1,6 @@
 import React from "react";
 import Expo from "expo";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, TextInput } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, TextInput, CameraRoll } from "react-native";
 import { Constants, MapView, Location, Permissions } from "expo";
 import ExpoTHREE from "expo-three";
 
@@ -70,12 +70,17 @@ export default class App extends React.Component {
     return (
       <ScrollView>
       <View style={styles.container}>
+
         <TextInput
           style={styles.inputText}
           onChangeText = {(text) => this.setState({topText: text})}
           value={this.state.text}
-          />
-        <View style={{ margin: 5}}>
+        />
+
+        <View
+          style={{ margin: 5}}
+          ref={(ref) => this.memeView = ref}
+        >
           <Image
             source={{
               uri: this.state.imageUri
@@ -91,17 +96,24 @@ export default class App extends React.Component {
             {this.state.bottomText}
           </Text>
         </View>
+
         <TextInput
           style={styles.inputText}
           onChangeText = {(text) => this.setState({bottomText: text})}
           value={this.state.bottomText}
-          />
+        />
 
 
         <TouchableOpacity
           style={styles.button}
           onPress={this._onPick}>
           <Text>hello, world</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={this._onSave}>
+          <Text>Save</Text>
         </TouchableOpacity>
 
         <MapView
@@ -134,6 +146,12 @@ export default class App extends React.Component {
     }
     console.log('uri', uri)
   }
+
+  _onSave = async () => {
+    const {uri} = await Expo.takeSnapshotAsync(this.memeView);
+    console.log('uri2: ', uri);
+    // await CameraRoll.saveToCameraRoll(uri);
+  }
 }
 
 const styles = StyleSheet.create({
@@ -143,7 +161,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'stretch',
     margin: 10,
-    padding: 5
+    padding: 5,
+    color: 'gray'
   },
   text: {
     position: 'absolute',
