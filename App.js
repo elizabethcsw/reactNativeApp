@@ -1,7 +1,7 @@
 import React from "react";
 import Expo from "expo";
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, TextInput, CameraRoll } from "react-native";
-import { Constants, MapView, Location, Permissions } from "expo";
+import { Constants, MapView, Location, Permissions, Camera } from "expo";
 import ExpoTHREE from "expo-three";
 
 const THREE = require("three");
@@ -40,11 +40,18 @@ export default class App extends React.Component {
     imageUri: 'https://images.plurk.com/2A3ca9h910J2q0IRdd8bQE.jpg',
     topText: '',
     bottomText: '',
+    hasCameraPermission: null,
+    type: Camera.Constants.Type.back,
   };
 
   componentDidMount() {
     this._getLocationAsync();
-  }
+  };
+
+  async componentWillMount() {
+    const { status } = await Permissions.askAsync(Permissions.CAMERA);
+    this.setState({ hasCameraPermission: status === 'granted' });
+  };
 
   _handleMapRegionChange = mapRegion => {
     this.setState({ mapRegion });
@@ -67,80 +74,117 @@ export default class App extends React.Component {
   };
 
   render() {
-    return (
-      <ScrollView>
-      <View style={styles.container}>
+    const { hasCameraPermission } = this.state;
+    if (hasCameraPermission === null) {
+      return <View />;
+    } else if (hasCameraPermission === false) {
+      return <Text>No access to camera</Text>;
+    } else {
+      return (
+        <ScrollView>
+        <View style={{ flex: 1 }}>
+          <Camera style={{ flex: 1 }} type={this.state.type}>
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                flexDirection: 'row',
+                height: 500,
+              }}>
+              <TouchableOpacity
+                style={{
+                  flex: 0.1,
+                  alignSelf: 'flex-end',
+                  alignItems: 'center',
+                }}
+                onPress={() => {
+                  this.setState({
+                    type: this.state.type === Camera.Constants.Type.back
+                      ? Camera.Constants.Type.front
+                      : Camera.Constants.Type.back,
+                  });
+                }}>
+                <Text
+                  style={{ fontSize: 18, marginBottom: 10, color: 'white' }}>
+                  {' '}Flip{' '}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Camera>
+        </View>
 
-        <TextInput
-          style={styles.inputText}
-          onChangeText = {(text) => this.setState({topText: text})}
-          value={this.state.text}
-        />
+        <View style={styles.container}>
 
-        <View
-          style={{ margin: 5}}
-          ref={(ref) => this.memeView = ref}
-        >
-          <Image
-            source={{
-              uri: this.state.imageUri
-            }}
-            style={{ width: 400, height: 400 }}
+          <TextInput
+            style={styles.inputText}
+            onChangeText = {(text) => this.setState({topText: text})}
+            value={this.state.text}
           />
-          <Text
-            style={[styles.text, {top:5}]}>
-            {this.state.topText}
-          </Text>
-          <Text
-            style={[styles.text, {bottom:5}]}>
-            {this.state.bottomText}
-          </Text>
+
+          <View
+            style={{ margin: 5}}
+            ref={(ref) => this.memeView = ref}
+          >
+            <Image
+              source={{
+                uri: this.state.imageUri
+              }}
+              style={{ width: 400, height: 400 }}
+            />
+            <Text
+              style={[styles.text, {top:5}]}>
+              {this.state.topText}
+            </Text>
+            <Text
+              style={[styles.text, {bottom:5}]}>
+              {this.state.bottomText}
+            </Text>
+          </View>
+
+          <TextInput
+            style={styles.inputText}
+            onChangeText = {(text) => this.setState({bottomText: text})}
+            value={this.state.bottomText}
+          />
+
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this._onPick}>
+            <Text>hello, world</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this._onTake}>
+            <Text>take a pic!</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this._onSave}>
+            <Text>Save</Text>
+          </TouchableOpacity>
+
+          <MapView
+            style={{ alignSelf: "stretch", height: 300 }}
+            region={this.state.mapRegion}
+            onRegionChange={this._handleMapRegionChange}
+          />
+
+          <View style={{ flexDirection: "row" }}>
+            <CounterButton />
+            <CounterButton />
+            <CounterButton />
+          </View>
+
+
+
+
         </View>
-
-        <TextInput
-          style={styles.inputText}
-          onChangeText = {(text) => this.setState({bottomText: text})}
-          value={this.state.bottomText}
-        />
-
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={this._onPick}>
-          <Text>hello, world</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={this._onTake}>
-          <Text>take a pic!</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={this._onSave}>
-          <Text>Save</Text>
-        </TouchableOpacity>
-
-        <MapView
-          style={{ alignSelf: "stretch", height: 300 }}
-          region={this.state.mapRegion}
-          onRegionChange={this._handleMapRegionChange}
-        />
-
-        <View style={{ flexDirection: "row" }}>
-          <CounterButton />
-          <CounterButton />
-          <CounterButton />
-        </View>
-
-
-
-
-      </View>
-      </ScrollView>
-    );
-  }
+        </ScrollView>
+      );
+  }}
 
   _onPick = async () => {
     const {
@@ -154,10 +198,12 @@ export default class App extends React.Component {
   }
 
   _onSave = async () => {
+    // CameraRoll.saveToCameraRoll('/private/var/mobile/Containers/Data/Application/421EC44E-4C8C-4248-8B37-0059B581B734/tmp/ReactABI21_0_0Native/CDF0AA2B-0674-432D-BB98-8CD0C1F449FA.png')
     const uri = await Expo.takeSnapshotAsync(this.memeView);
     console.log('uri2: ', uri);
     // await CameraRoll.saveToCameraRoll(uri);
     // await CameraRoll.saveToCameraRoll('/private/var/mobile/Containers/Data/Application/421EC44E-4C8C-4248-8B37-0059B581B734/tmp/ReactABI21_0_0Native/CDF0AA2B-0674-432D-BB98-8CD0C1F449FA.png');
+    // CameraRoll.saveToCameraRoll((await Expo.ImagePicker.launchCameraAsync({})).uri);
   }
 
   _onTake = async () => {
